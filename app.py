@@ -1,71 +1,84 @@
-from flask import Flask, request, jsonify
+from flask import Flask, jsonify, request
 from pymongo import MongoClient
-from bson.objectid import ObjectId
-from datetime import datetime
+from neo4j import GraphDatabase
+import threading
 
+# Flask App Initialization
 app = Flask(__name__)
 
-# MongoDB connection
-client = MongoClient("mongodb://localhost:27017/")  # Replace with your connection URI
-db = client["social_media"]  # Replace with your database name
+# MongoDB Connection
+mongo_client = MongoClient("mongodb://localhost:27017/")  # Connect to MongoDB running in Docker
+db = mongo_client["social_media"]
 
-@app.route("/recommendations", methods=["GET"])
+# Neo4j Connection
+neo4j_driver = GraphDatabase.driver("bolt://localhost:7687", auth=("neo4j", "password"))  # Connect to Neo4j running in Docker
+
+def sync_to_neo4j():
+    """
+    Synchronizes changes from MongoDB to Neo4j in real-time.
+    """
+    with db.interactions.watch() as stream:
+        print("Listening for changes in MongoDB...")
+        for change in stream:
+            with neo4j_driver.session() as session:
+                if change["operationType"] == "insert":
+                    doc = change["fullDocument"]
+                    session.run("""
+                        MERGE (u:User {id: $user_id})
+                        MERGE (c:Content {id: $content_id})
+                        MERGE (u)-[:LIKED]->(c)
+                    """, user_id=doc["user_id"], content_id=doc["content_id"])
+
+@app.route('/recommendations', methods=['GET'])
 def get_recommendations():
+    """
+    API endpoint to calculate PageRank dynamically and return recommendations.
+    """
+    user_id = request.args.get("user_id")
+    if not user_id:
+        return jsonify({"error": "Missing user_id"}), 400
+
     try:
-        # Step 1: Get the user_id from the request
-        user_id = request.args.get("user_id")
-        if not user_id:
-            return jsonify({"error": "Missing user_id in request"}), 400
-
-        # Step 2: Fetch posts the user has already interacted with
-        user_interactions = db.interactions.find({"user_id": user_id})
-        interacted_content_ids = {interaction["content_id"] for interaction in user_interactions}
-
-        # Step 3: Find users who have interacted with the same posts
-        similar_users_cursor = db.interactions.find({
-            "content_id": {"$in": list(interacted_content_ids)},
-            "user_id": {"$ne": user_id}  # Exclude the current user
-        })
-
-        similar_user_ids = {interaction["user_id"] for interaction in similar_users_cursor}
-
-        # Step 4: Fetch content interacted by similar users that the current user hasn't seen
-        recommended_interactions = db.interactions.find({
-            "user_id": {"$in": list(similar_user_ids)},
-            "content_id": {"$nin": list(interacted_content_ids)}
-        })
-
-        # Get content IDs from these interactions
-        recommended_content_ids = {interaction["content_id"] for interaction in recommended_interactions}
-
-        # Step 5: Fetch details about the recommended content
-        recommended_content = db.content.find({
-            "_id": {"$in": list(recommended_content_ids)}
-        })
-
-        # Step 6: Rank the content by popularity (e.g., number of interactions or custom score)
-        ranked_content = []
-        for content in recommended_content:
-            content_id = content["_id"]
-            interaction_count = db.interactions.count_documents({"content_id": content_id})
-            ranked_content.append({
-                "content_id": content_id,
-                "description": content["description"],
-                "tags": content.get("tags", []),
-                "type": content.get("type", ""),
-                "created_by": content.get("created_by", ""),
-                "interaction_count": interaction_count
+        with neo4j_driver.session() as session:
+            # Dynamically calculate PageRank and get recommendations
+            query = """
+            CALL gds.pageRank.stream({
+                nodeProjection: 'Content',
+                relationshipProjection: {
+                    LIKED: { type: 'LIKED', orientation: 'REVERSE' }
+                }
             })
-
-        # Sort content by interaction count (descending)
-        ranked_content = sorted(ranked_content, key=lambda x: x["interaction_count"], reverse=True)
-
-        # Step 7: Return JSON response
-        return jsonify({"user_id": user_id, "recommendations": ranked_content}), 200
+            YIELD nodeId, score
+            MATCH (user:User {id: $user_id})-[:LIKED]->(content:Content)<-[:LIKED]-(similar_user:User)
+            WHERE similar_user <> user
+            MATCH (similar_user)-[:LIKED]->(recommended_content:Content)
+            WHERE NOT (user)-[:LIKED]->(recommended_content) AND id(recommended_content) = nodeId
+            RETURN recommended_content.id AS content_id,
+                   recommended_content.description AS description,
+                   recommended_content.type AS type,
+                   score AS page_rank
+            ORDER BY page_rank DESC
+            LIMIT 10
+            """
+            result = session.run(query, user_id=user_id)
+            recommendations = [
+                {
+                    "content_id": record["content_id"],
+                    "description": record["description"],
+                    "type": record["type"],
+                    "page_rank": record["page_rank"]
+                }
+                for record in result
+            ]
+            return jsonify({"user_id": user_id, "recommendations": recommendations}), 200
 
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 
-
 if __name__ == "__main__":
-    app.run(debug=True)
+    # Start the synchronization thread
+    sync_thread = threading.Thread(target=sync_to_neo4j, daemon=True)
+    sync_thread.start()
+
+    # Start Flask server
+    app.run(host="0.0.0.0", port=5000, debug=True)
