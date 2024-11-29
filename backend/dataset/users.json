@@ -1,0 +1,72 @@
+[
+  {
+    "_id": "user_001",
+    "name": "Aarav Mehta",
+    "email": "aarav.mehta@example.com",
+    "location": "San Francisco",
+    "created_at": "2024-11-01T10:00:00"
+  },
+  {
+    "_id": "user_002",
+    "name": "Zara Patel",
+    "email": "zara.patel@example.com",
+    "location": "New York",
+    "created_at": "2024-11-01T10:05:00"
+  },
+  {
+    "_id": "user_003",
+    "name": "Rohan Gupta",
+    "email": "rohan.gupta@example.com",
+    "location": "Los Angeles",
+    "created_at": "2024-11-01T10:10:00"
+  },
+  {
+    "_id": "user_004",
+    "name": "Leena Shah",
+    "email": "leena.shah@example.com",
+    "location": "Chicago",
+    "created_at": "2024-11-01T10:15:00"
+  },
+  {
+    "_id": "user_005",
+    "name": "Kabir Singh",
+    "email": "kabir.singh@example.com",
+    "location": "Houston",
+    "created_at": "2024-11-01T10:20:00"
+  },
+  {
+    "_id": "user_006",
+    "name": "Maya Iyer",
+    "email": "maya.iyer@example.com",
+    "location": "Seattle",
+    "created_at": "2024-11-01T10:25:00"
+  },
+  {
+    "_id": "user_007",
+    "name": "Vivaan Kapoor",
+    "email": "vivaan.kapoor@example.com",
+    "location": "Boston",
+    "created_at": "2024-11-01T10:30:00"
+  },
+  {
+    "_id": "user_008",
+    "name": "Anika Verma",
+    "email": "anika.verma@example.com",
+    "location": "Atlanta",
+    "created_at": "2024-11-01T10:35:00"
+  },
+  {
+    "_id": "user_009",
+    "name": "Aryan Desai",
+    "email": "aryan.desai@example.com",
+    "location": "Austin",
+    "created_at": "2024-11-01T10:40:00"
+  },
+  {
+    "_id": "user_010",
+    "name": "Ishita Roy",
+    "email": "ishita.roy@example.com",
+    "location": "Denver",
+    "created_at": "2024-11-01T10:45:00"
+  }
+]

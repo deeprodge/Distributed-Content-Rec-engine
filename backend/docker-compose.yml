@@ -1,0 +1,97 @@
+version: '3.8'
+
+services:
+  # Config Servers
+  cfg1:
+    image: mongo
+    container_name: cfg1
+    command: mongod --configsvr --replSet rs_config --port 27017
+    volumes:
+      - ./data/cfg1:/data/db
+    networks:
+      - mongo_net
+
+  cfg2:
+    image: mongo
+    container_name: cfg2
+    command: mongod --configsvr --replSet rs_config --port 27017
+    volumes:
+      - ./data/cfg2:/data/db
+    networks:
+      - mongo_net
+
+  cfg3:
+    image: mongo
+    container_name: cfg3
+    command: mongod --configsvr --replSet rs_config --port 27017
+    volumes:
+      - ./data/cfg3:/data/db
+    networks:
+      - mongo_net
+
+  # Shard 1 Replica Set
+  shard1_1:
+    image: mongo
+    container_name: shard1_1
+    command: mongod --shardsvr --replSet rs_shard1 --port 27017
+    volumes:
+      - ./data/shard1_1:/data/db
+    networks:
+      - mongo_net
+
+  shard1_2:
+    image: mongo
+    container_name: shard1_2
+    command: mongod --shardsvr --replSet rs_shard1 --port 27017
+    volumes:
+      - ./data/shard1_2:/data/db
+    networks:
+      - mongo_net
+
+  shard1_3:
+    image: mongo
+    container_name: shard1_3
+    command: mongod --shardsvr --replSet rs_shard1 --port 27017
+    volumes:
+      - ./data/shard1_3:/data/db
+    networks:
+      - mongo_net
+
+  # Router (mongos)
+  router:
+    image: mongo
+    container_name: router
+    command: mongos --configdb rs_config/cfg1:27017,cfg2:27017,cfg3:27017
+    ports:
+      - "27017:27017"
+    depends_on:
+      - cfg1
+      - cfg2
+      - cfg3
+      - shard1_1
+      - shard1_2
+      - shard1_3
+    networks:
+      - mongo_net
+
+  neo4j:
+    image: neo4j:latest
+    container_name: neo4j
+    ports:
+      - "7474:7474"  # HTTP
+      - "7687:7687"  # Bolt
+    environment:
+      - NEO4J_AUTH=neo4j/DiscoDeewaneS
+      - NEO4J_apoc_export_file_enabled=true
+      - NEO4J_apoc_import_file_enabled=true
+      - NEO4J_apoc_import_file_use__neo4j__config=true
+      - NEO4JLABS_PLUGINS=["apoc"]
+    volumes:
+      - ./neo4j/data:/data
+      - ./neo4j/import:/import
+    networks:
+      - mongo_net
+
+networks:
+  mongo_net:
+    driver: bridge
