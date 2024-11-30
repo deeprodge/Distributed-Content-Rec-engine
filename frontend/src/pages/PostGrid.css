@@ -1,10 +1,15 @@
+.post-image {
+    width: 100%;
+    aspect-ratio: 1 / 1;
+    object-fit: cover;
+    display: block;
+}
+
 .post-grid {
     display: grid;
-    grid-template-columns: repeat(3, 1fr);
-    /* 3 posts per row */
+    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
     gap: 20px;
     padding: 20px;
-    background-color: #f9f9f9;
 }
 
 .post-grid p {

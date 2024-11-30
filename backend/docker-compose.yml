@@ -5,7 +5,7 @@ services:
   cfg1:
     image: mongo
     container_name: cfg1
-    command: mongod --configsvr --replSet rs_config --port 27017
+    command: mongod --configsvr --replSet rs_config --port 27017 --bind_ip_all
     volumes:
       - ./data/cfg1:/data/db
     networks:
@@ -14,7 +14,7 @@ services:
   cfg2:
     image: mongo
     container_name: cfg2
-    command: mongod --configsvr --replSet rs_config --port 27017
+    command: mongod --configsvr --replSet rs_config --port 27017 --bind_ip_all
     volumes:
       - ./data/cfg2:/data/db
     networks:
@@ -23,7 +23,7 @@ services:
   cfg3:
     image: mongo
     container_name: cfg3
-    command: mongod --configsvr --replSet rs_config --port 27017
+    command: mongod --configsvr --replSet rs_config --port 27017 --bind_ip_all
     volumes:
       - ./data/cfg3:/data/db
     networks:
@@ -33,7 +33,7 @@ services:
   shard1_1:
     image: mongo
     container_name: shard1_1
-    command: mongod --shardsvr --replSet rs_shard1 --port 27017
+    command: mongod --shardsvr --replSet rs_shard1 --port 27017 --bind_ip_all
     volumes:
       - ./data/shard1_1:/data/db
     networks:
@@ -42,7 +42,7 @@ services:
   shard1_2:
     image: mongo
     container_name: shard1_2
-    command: mongod --shardsvr --replSet rs_shard1 --port 27017
+    command: mongod --shardsvr --replSet rs_shard1 --port 27017 --bind_ip_all
     volumes:
       - ./data/shard1_2:/data/db
     networks:
@@ -51,7 +51,7 @@ services:
   shard1_3:
     image: mongo
     container_name: shard1_3
-    command: mongod --shardsvr --replSet rs_shard1 --port 27017
+    command: mongod --shardsvr --replSet rs_shard1 --port 27017 --bind_ip_all
     volumes:
       - ./data/shard1_3:/data/db
     networks:
@@ -61,7 +61,7 @@ services:
   router:
     image: mongo
     container_name: router
-    command: mongos --configdb rs_config/cfg1:27017,cfg2:27017,cfg3:27017
+    command: mongos --configdb rs_config/cfg1:27017,cfg2:27017,cfg3:27017 --bind_ip_all
     ports:
       - "27017:27017"
     depends_on:
@@ -73,6 +73,8 @@ services:
       - shard1_3
     networks:
       - mongo_net
+    extra_hosts:
+      - host.docker.internal:host-gateway
 
   neo4j:
     image: neo4j:latest
@@ -91,6 +93,15 @@ services:
       - ./neo4j/import:/import
     networks:
       - mongo_net
+
+  # # Dummy Linux container
+  # dummy:
+  #   image: httpd:alpine  # Use the official Apache HTTP server image
+  #   container_name: dummy_container
+  #   ports:
+  #     - "1010:80"  # Map port 1010 on the host to port 80 in the container
+  #   networks:
+  #     - mongo_net
 
 networks:
   mongo_net:
