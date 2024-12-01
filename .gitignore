@@ -1,4 +1,6 @@
 backend/data/
+.DS_Store
+backend/neo4j
 backend/data/.DS_Store
 backend/data/cfg1/.mongodb/mongosh/674941780f8dcaf977f7c613_log
 backend/data/cfg1/.mongodb/mongosh/config
