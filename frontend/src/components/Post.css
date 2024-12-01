@@ -1,42 +1,133 @@
-.post {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    padding: 10px;
-    border: 1px solid #ddd;
+.post-card {
+    background: white;
+    border: 1px solid #dbdbdb;
     border-radius: 8px;
-    background-color: #fff;
-    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
-    margin: 10px;
+    margin-bottom: 24px;
+    overflow: hidden;
 }
 
-.post-image img {
-    max-width: 100%;
-    height: auto;
-    border-radius: 8px;
+.post-image-container {
+    width: 100%;
+    aspect-ratio: 1;
+}
+
+.post-image {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
 }
 
 .post-actions {
+    padding: 8px 16px;
     display: flex;
-    justify-content: space-around;
-    width: 100%;
-    margin-top: 10px;
+    gap: 16px;
+    border-bottom: 1px solid #efefef;
 }
 
-.post-action {
-    border: none;
+.action-button {
     background: none;
-    font-size: 16px;
+    border: none;
+    padding: 8px;
     cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #262626;
+    transition: color 0.2s ease;
 }
 
-.post-action i {
-    margin-right: 5px;
-    color: #555;
+.action-button:hover {
+    color: #8e8e8e;
 }
 
-.post-description {
-    margin-top: 10px;
+.action-button.liked {
+    color: #ed4956;
+}
+
+.action-button.liked:hover {
+    color: #ed4956;
+}
+
+.post-likes {
+    padding: 0 16px;
+    margin: 4px 0;
+    font-weight: 600;
+    font-size: 14px;
+}
+
+.post-caption {
+    padding: 8px 16px;
+    font-size: 14px;
+    line-height: 1.4;
+}
+
+.username {
+    font-weight: 600;
+    margin-right: 6px;
+}
+
+.post-comments {
+    border-top: 1px solid #efefef;
+    padding: 16px;
+    background: #fafafa;
+}
+
+.comment {
+    font-size: 14px;
+    margin-bottom: 8px;
+}
+
+.no-comments {
+    color: #8e8e8e;
+    font-size: 14px;
     text-align: center;
-    color: #555;
+    padding: 16px 0;
+}
+
+.add-comment {
+    display: flex;
+    gap: 8px;
+    padding: 16px;
+    border-top: 1px solid #efefef;
+}
+
+.comment-input {
+    flex: 1;
+    border: none;
+    outline: none;
+    font-size: 14px;
+    padding: 8px;
+    background: transparent;
+}
+
+.post-button {
+    background: none;
+    border: none;
+    color: #0095f6;
+    font-weight: 600;
+    font-size: 14px;
+    cursor: pointer;
+    padding: 0;
+}
+
+.post-button:hover {
+    color: #00376b;
+}
+
+.action-group {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+}
+
+.interaction-count {
+    font-size: 14px;
+    color: #262626;
+}
+
+.post-comments {
+    max-height: 300px;
+    overflow-y: auto;
+    transition: max-height 0.3s ease;
 }
