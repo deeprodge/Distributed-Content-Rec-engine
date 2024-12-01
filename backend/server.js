@@ -60,54 +60,133 @@ app.post('/api/recommendations', async (req, res) => {
         const recommendedContentIds = neoResult.records.map(record => record.get('contentId'));
         console.log('Recommended content IDs:', recommendedContentIds);
 
-        // If no recommendations, fall back to latest content
-        const contentIdsToFetch = recommendedContentIds.length > 0 
-            ? recommendedContentIds 
-            : null;
-
         // Connect to MongoDB
         const client = await connectToMongo();
         const db = client.db('mydb');
         
         // Fetch content with images
-        console.log('Fetching content and images from MongoDB...');
         const contents = await db.collection('content')
-            .find(contentIdsToFetch ? { _id: { $in: contentIdsToFetch } } : {})
+            .find(recommendedContentIds.length > 0 
+                ? { _id: { $in: recommendedContentIds } } 
+                : {})
             .limit(10)
             .toArray();
         
-        // Fetch corresponding images
         const contentIds = contents.map(content => content._id);
+
+        // Get all unique user IDs from contents and comments
+        const userIds = new Set(contents.map(content => content.user_id));
+        
+        // Fetch all users in one query
+        const users = await db.collection('users')
+            .find({ _id: { $in: Array.from(userIds) } })
+            .toArray();
+
+        // Create a map of user IDs to names
+        const userNameMap = users.reduce((acc, user) => {
+            acc[user._id] = user.name;
+            return acc;
+        }, {});
+        
+        // Fetch images
         const images = await db.collection('images')
             .find({ _id: { $in: contentIds } })
             .toArray();
-        
+
         // Get interaction counts
         const interactions = await db.collection('interactions')
             .aggregate([
-                { $match: { content_id: { $in: contentIds } }},
-                { $group: {
-                    _id: '$content_id',
-                    likes: { 
-                        $sum: { $cond: [{ $eq: ['$interaction_type', 'like'] }, 1, 0] }
-                    },
-                    shares: {
-                        $sum: { $cond: [{ $eq: ['$interaction_type', 'share'] }, 1, 0] }
+                { 
+                    $match: { 
+                        content_id: { $in: contentIds }
                     }
-                }}
+                },
+                {
+                    $group: {
+                        _id: '$content_id',
+                        likes: {
+                            $sum: { $cond: [{ $eq: ['$interaction_type', 'like'] }, 1, 0] }
+                        },
+                        comments: {
+                            $sum: { $cond: [{ $eq: ['$interaction_type', 'comment'] }, 1, 0] }
+                        },
+                        shares: {
+                            $sum: { $cond: [{ $eq: ['$interaction_type', 'share'] }, 1, 0] }
+                        }
+                    }
+                }
             ]).toArray();
 
+        // Get user's likes
+        const userLikes = await db.collection('interactions')
+            .find({
+                user_id: userId,
+                content_id: { $in: contentIds },
+                interaction_type: 'like'
+            })
+            .toArray();
+
+        const userLikedContentIds = new Set(userLikes.map(like => like.content_id));
+
+        // Get comments and their user details
+        const comments = await db.collection('interactions')
+            .find({
+                content_id: { $in: contentIds },
+                interaction_type: 'comment'
+            })
+            .toArray();
+
+        // Get additional user IDs from comments
+        const commentUserIds = new Set(comments.map(comment => comment.user_id));
+        
+        // Fetch comment users
+        const commentUsers = await db.collection('users')
+            .find({ _id: { $in: Array.from(commentUserIds) } })
+            .toArray();
+
+        // Add comment users to the name map
+        commentUsers.forEach(user => {
+            userNameMap[user._id] = user.name;
+        });
+
+        // Group comments by content_id with user names
+        const commentsByContent = comments.reduce((acc, comment) => {
+            if (!acc[comment.content_id]) {
+                acc[comment.content_id] = [];
+            }
+            acc[comment.content_id].push({
+                username: userNameMap[comment.user_id] || 'Unknown User',
+                comment_text: comment.comment_text,
+                timestamp: comment.timestamp
+            });
+            return acc;
+        }, {});
+
         // Combine all data
-        const enrichedContent = contents.map(content => ({
-            ...content,
-            image: images.find(img => img._id === content._id)?.image || null,
-            interactions: interactions.find(i => i._id === content._id) || { likes: 0, shares: 0 }
-        }));
+        const enrichedContent = contents.map(content => {
+            const contentId = content._id;
+            const interactionData = interactions.find(i => i._id === contentId) || {
+                likes: 0,
+                comments: 0,
+                shares: 0
+            };
+
+            return {
+                ...content,
+                username: userNameMap[content.user_id] || 'Unknown User', // Add poster's name
+                image: images.find(img => img._id === contentId)?.image || null,
+                interactions: {
+                    ...interactionData,
+                    hasLiked: userLikedContentIds.has(contentId)
+                },
+                comments: commentsByContent[contentId] || []
+            };
+        });
 
         // Sort the enriched content to match Neo4j recommendation order
-        if (contentIdsToFetch) {
+        if (recommendedContentIds.length > 0) {
             enrichedContent.sort((a, b) => {
-                return contentIdsToFetch.indexOf(a._id) - contentIdsToFetch.indexOf(b._id);
+                return recommendedContentIds.indexOf(a._id) - recommendedContentIds.indexOf(b._id);
             });
         }
 
