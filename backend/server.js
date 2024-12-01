@@ -206,6 +206,82 @@ app.post('/api/recommendations', async (req, res) => {
     }
 });
 
+// Add this new endpoint for handling likes
+app.post('/api/like', async (req, res) => {
+    const { userId, contentId, isLiking } = req.body;
+    let session = null;
+
+    console.log(`Like request received - User: ${userId}, Content: ${contentId}, Action: ${isLiking ? 'liking' : 'unliking'}`);
+
+    try {
+        // Connect to MongoDB
+        const client = await connectToMongo();
+        const db = client.db('mydb');
+
+        if (isLiking) {
+            // Add like to MongoDB
+            await db.collection('interactions').insertOne({
+                _id: `interaction_${Date.now()}`,
+                user_id: userId,
+                content_id: contentId,
+                interaction_type: 'like',
+                timestamp: new Date().toISOString()
+            });
+            console.log('✅ MongoDB: Like added successfully');
+
+            // Add relationship to Neo4j
+            session = driver.session();
+            await session.run(`
+                MATCH (u:User {id: $userId})
+                MATCH (c:Content {id: $contentId})
+                MERGE (u)-[r:INTERACTED]->(c)
+                RETURN r
+            `, { userId, contentId });
+            console.log('✅ Neo4j: Relationship added successfully');
+
+        } else {
+            // Remove like from MongoDB
+            const result = await db.collection('interactions').deleteOne({
+                user_id: userId,
+                content_id: contentId,
+                interaction_type: 'like'
+            });
+            console.log('✅ MongoDB: Like removed successfully', result.deletedCount ? '(1 document deleted)' : '(no document found)');
+
+            // Remove relationship from Neo4j
+            session = driver.session();
+            const neoResult = await session.run(`
+                MATCH (u:User {id: $userId})-[r:INTERACTED]->(c:Content {id: $contentId})
+                DELETE r
+                RETURN count(r) as deletedCount
+            `, { userId, contentId });
+            console.log('✅ Neo4j: Relationship removed successfully', 
+                neoResult.records[0].get('deletedCount') ? '(relationship deleted)' : '(no relationship found)');
+        }
+
+        console.log('👍 Like operation completed successfully');
+        res.json({ success: true });
+
+    } catch (error) {
+        console.error('❌ Error in /api/like:', error);
+        console.error('Failed operation details:', {
+            userId,
+            contentId,
+            action: isLiking ? 'like' : 'unlike',
+            timestamp: new Date().toISOString()
+        });
+        res.status(500).json({ 
+            error: error.message,
+            stack: process.env.NODE_ENV === 'development' ? error.stack : undefined
+        });
+    } finally {
+        if (session) {
+            session.close();
+            console.log('Neo4j session closed');
+        }
+    }
+});
+
 // Test connections on startup
 async function testConnections() {
     try {

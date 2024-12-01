@@ -17,15 +17,63 @@ const Post = ({
 	const [isLiked, setIsLiked] = useState(interactions.hasLiked);
 	const [likesCount, setLikesCount] = useState(interactions.likes);
 	const [showComments, setShowComments] = useState(false);
+	const [isUpdating, setIsUpdating] = useState(false);
 
-	const handleLike = () => {
-		if (isLiked) {
-			setLikesCount(prev => prev - 1);
-		} else {
-			setLikesCount(prev => prev + 1);
+	const handleLike = async () => {
+		if (isUpdating) return;
+		
+		console.log(`Attempting to ${!isLiked ? 'like' : 'unlike'} post ${postId}`);
+		
+		try {
+			setIsUpdating(true);
+			console.log('Making API request with:', {
+				userId: currentUserId,
+				contentId: postId,
+				isLiking: !isLiked
+			});
+
+			const response = await fetch('http://localhost:3001/api/like', {
+				method: 'POST',
+				headers: {
+					'Content-Type': 'application/json',
+				},
+				body: JSON.stringify({
+					userId: currentUserId,
+					contentId: postId,
+					isLiking: !isLiked
+				})
+			});
+
+			if (!response.ok) {
+				throw new Error('Failed to update like');
+			}
+
+			const data = await response.json();
+			console.log('API Response:', data);
+
+			// Update local state only after successful API call
+			if (isLiked) {
+				setLikesCount(prev => prev - 1);
+				console.log(`✅ Unliked post ${postId}. New count: ${likesCount - 1}`);
+			} else {
+				setLikesCount(prev => prev + 1);
+				console.log(`✅ Liked post ${postId}. New count: ${likesCount + 1}`);
+			}
+			setIsLiked(!isLiked);
+
+		} catch (error) {
+			console.error('❌ Error updating like:', error);
+			console.error('Failed operation details:', {
+				postId,
+				currentUserId,
+				attempted_action: !isLiked ? 'like' : 'unlike',
+				current_likes: likesCount
+			});
+			// Optionally show error to user
+		} finally {
+			setIsUpdating(false);
+			console.log('Like operation completed');
 		}
-		setIsLiked(!isLiked);
-		// TODO: Add API call to update like status
 	};
 
 	return (
@@ -41,8 +89,9 @@ const Post = ({
 			<div className="post-actions">
 				<div className="action-group">
 					<button 
-						className={`action-button ${isLiked ? 'liked' : ''}`}
+						className={`action-button ${isLiked ? 'liked' : ''} ${isUpdating ? 'updating' : ''}`}
 						onClick={handleLike}
+						disabled={isUpdating}
 					>
 						{isLiked ? <AiFillHeart size={24} /> : <AiOutlineHeart size={24} />}
 					</button>
