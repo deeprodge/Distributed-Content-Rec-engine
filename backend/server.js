@@ -399,9 +399,9 @@ app.post('/api/myprofile', async (req, res) => {
 		const client = await connectToMongo();
 		const db = client.db('mydb');
 
-		// Fetch user's posts
+		// Fetch user's posts using the correct field 'created_by'
 		const userPosts = await db.collection('content')
-			.find({ user_id: userId })
+			.find({ created_by: userId })
 			.toArray();
 
 		console.log(`Found ${userPosts.length} posts for user ${userId}`);
