@@ -2,14 +2,14 @@
 import React, { useState, useEffect } from "react";
 import Post from "./Post";
 import "./PostGrid.css";
-import { setCurrentUserId, getCurrentUserId } from "../GlobalState";
+// import { setCurrentUserId, getCurrentUserId } from "../GlobalState";
 
-const PostGrid = ({ apiEndpoint, pageTitle }) => {
+const PostGrid = ({ currentUser, apiEndpoint, pageTitle }) => {
 	const [posts, setPosts] = useState([]);
 	const [loading, setLoading] = useState(true);
 	const [error, setError] = useState(null);
-	const currentUser = getCurrentUserId();
-
+	// const currentUser = getCurrentUserId();
+	console.log("currentUser: ", currentUser);
 	// Actual users data
 	const users = [
 		{

@@ -9,6 +9,7 @@ const Login = ({ onLogin }) => {
 
 	const handleLogin = () => {
 		if (username.trim()) {
+			console.log(username);
 			setCurrentUserId(username); // Set the global user ID
 			onLogin(username); // Trigger the parent component's login logic
 		} else {

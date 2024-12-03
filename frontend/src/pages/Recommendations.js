@@ -2,9 +2,10 @@
 import React from "react";
 import PostGrid from "../components/PostGrid";
 
-const Recommendations = () => {
+const Recommendations = ({ currentUser }) => {
 	return (
 		<PostGrid
+			currentUser={currentUser}
 			apiEndpoint="http://localhost:3001/api/recommendations"
 			pageTitle="Recommendations"
 		/>
