@@ -2,10 +2,9 @@
 import React from "react";
 import PostGrid from "../components/PostGrid";
 
-const MyProfile = ({ currentUser }) => {
+const MyProfile = () => {
 	return (
 		<PostGrid
-			currentUser={currentUser}
 			apiEndpoint="http://localhost:3001/api/myprofile"
 			pageTitle="My Profile"
 		/>

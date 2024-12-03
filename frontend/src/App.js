@@ -41,14 +41,8 @@ function App() {
 						</button>
 					</nav>
 					<Routes>
-						<Route
-							path="/recommendations"
-							element={<Recommendations currentUser={currentUser} />}
-						/>
-						<Route
-							path="/myprofile"
-							element={<MyProfile currentUser={currentUser} />}
-						/>
+						<Route path="/recommendations" element={<Recommendations />} />
+						<Route path="/myprofile" element={<MyProfile />} />
 						<Route path="*" element={<Navigate to="/recommendations" />} />
 					</Routes>
 				</div>
