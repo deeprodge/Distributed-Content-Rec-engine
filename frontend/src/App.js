@@ -5,6 +5,7 @@ import {
 	Route,
 	Routes,
 	Navigate,
+	Link,
 } from "react-router-dom";
 import Recommendations from "./pages/Recommendations";
 import MyProfile from "./pages/MyProfile";
@@ -19,8 +20,8 @@ function App() {
 		setCurrentUser(getCurrentUserId());
 		// setCurrentUserId(username);
 		// console.log("updating current user: ", getCurrentUserId());
-		console.log("updating current user: ", currentUser);
-		localStorage.setItem("currentUser", username);
+		console.log("updating current user: ", username);
+		localStorage.setItem("currentUser", currentUser);
 	};
 
 	const handleLogout = () => {
@@ -46,8 +47,8 @@ function App() {
 			) : (
 				<div>
 					<nav className="tab-bar">
-						<a href="/recommendations">Recommendations</a>
-						<a href="/myprofile">My Profile</a>
+						<Link to="/recommendations">Recommendations</Link>
+						<Link to="/myprofile">My Profile</Link>
 						<button className="logout-button" onClick={handleLogout}>
 							Logout
 						</button>
@@ -61,7 +62,10 @@ function App() {
 							path="/myprofile"
 							element={<MyProfile currentUser={currentUser} />}
 						/>
-						<Route path="*" element={<Navigate to="/recommendations" />} />
+						<Route
+							path="*"
+							element={<Navigate to="/recommendations" replace />}
+						/>
 					</Routes>
 				</div>
 			)}
