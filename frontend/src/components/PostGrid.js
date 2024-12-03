@@ -108,6 +108,7 @@ const PostGrid = ({ currentUser, apiEndpoint, pageTitle }) => {
 
 	return (
 		<div className="page-container">
+			<h1 className="page-title">{pageTitle}</h1>
 			<div className="post-grid">
 				{posts.map((post, index) => (
 					<Post
