@@ -389,11 +389,190 @@ app.post("/api/like", async (req, res) => {
 	}
 });
 
+// Add this new endpoint for fetching user's profile posts
+app.post('/api/myprofile', async (req, res) => {
+	const { userId } = req.body;
+	console.log(`Fetching profile posts for user: ${userId}`);
+
+	try {
+		// Connect to MongoDB
+		const client = await connectToMongo();
+		const db = client.db('mydb');
+
+		// Fetch user's posts
+		const userPosts = await db.collection('content')
+			.find({ user_id: userId })
+			.toArray();
+
+		console.log(`Found ${userPosts.length} posts for user ${userId}`);
+
+		const contentIds = userPosts.map(post => post._id);
+
+		// Get user details
+		const user = await db.collection('users')
+			.findOne({ _id: userId });
+
+		// Fetch images for the posts
+		const images = await db.collection('images')
+			.find({ _id: { $in: contentIds } })
+			.toArray();
+
+		// Get interaction counts
+		const interactions = await db.collection('interactions')
+			.aggregate([
+				{ 
+					$match: { 
+						content_id: { $in: contentIds }
+					}
+				},
+				{
+					$group: {
+						_id: '$content_id',
+						likes: {
+							$sum: { $cond: [{ $eq: ['$interaction_type', 'like'] }, 1, 0] }
+						},
+						comments: {
+							$sum: { $cond: [{ $eq: ['$interaction_type', 'comment'] }, 1, 0] }
+						},
+						shares: {
+							$sum: { $cond: [{ $eq: ['$interaction_type', 'share'] }, 1, 0] }
+						}
+					}
+				}
+			]).toArray();
+
+		// Get comments
+		const comments = await db.collection('interactions')
+			.find({
+				content_id: { $in: contentIds },
+				interaction_type: 'comment'
+			})
+			.toArray();
+
+		// Get all unique user IDs from comments
+		const commentUserIds = new Set(comments.map(comment => comment.user_id));
+		
+		// Fetch comment users
+		const commentUsers = await db.collection('users')
+			.find({ _id: { $in: Array.from(commentUserIds) } })
+			.toArray();
+
+		// Create a map of user IDs to names
+		const userNameMap = commentUsers.reduce((acc, user) => {
+			acc[user._id] = user.name;
+			return acc;
+		}, {});
+
+		// Group comments by content_id with user names
+		const commentsByContent = comments.reduce((acc, comment) => {
+			if (!acc[comment.content_id]) {
+				acc[comment.content_id] = [];
+			}
+			acc[comment.content_id].push({
+				username: userNameMap[comment.user_id] || 'Unknown User',
+				comment_text: comment.comment_text,
+				timestamp: comment.timestamp
+			});
+			return acc;
+		}, {});
+
+		// Check which posts the user has liked
+		const userLikes = await db.collection('interactions')
+			.find({
+				user_id: userId,
+				content_id: { $in: contentIds },
+				interaction_type: 'like'
+			})
+			.toArray();
+
+		const userLikedContentIds = new Set(userLikes.map(like => like.content_id));
+
+		// Combine all data
+		const enrichedPosts = userPosts.map(post => {
+			const contentId = post._id;
+			const interactionData = interactions.find(i => i._id === contentId) || {
+				likes: 0,
+				comments: 0,
+				shares: 0
+			};
+
+			return {
+				...post,
+				username: user.name, // Add user's name
+				image: images.find(img => img._id === contentId)?.image || null,
+				interactions: {
+					...interactionData,
+					hasLiked: userLikedContentIds.has(contentId)
+				},
+				comments: commentsByContent[contentId] || []
+			};
+		});
+
+		// Add user profile information
+		const profileData = {
+			user: {
+				_id: user._id,
+				name: user.name,
+				email: user.email,
+				location: user.location,
+				postsCount: userPosts.length,
+				// You can add more profile stats here
+			},
+			posts: enrichedPosts
+		};
+
+		console.log(`Successfully fetched profile data for user ${userId}`);
+		res.json(profileData);
+
+	} catch (error) {
+		console.error('Error in /api/myprofile:', error);
+		res.status(500).json({ 
+			error: error.message,
+			stack: process.env.NODE_ENV === 'development' ? error.stack : undefined
+		});
+	}
+});
+
+// The response of myprofile will look like:
+// {
+//     user: {
+//         _id: "user_001",
+//         name: "Aarav Mehta",
+//         email: "aarav.mehta@example.com",
+//         location: "San Francisco",
+//         postsCount: 5
+//     },
+//     posts: [
+//         {
+//             _id: "content_001",
+//             description: "Post description",
+//             username: "Aarav Mehta",
+//             image: "base64_image_data",
+//             interactions: {
+//                 likes: 10,
+//                 comments: 3,
+//                 shares: 1,
+//                 hasLiked: true
+//             },
+//             comments: [
+//                 {
+//                     username: "Zara Patel",
+//                     comment_text: "Great post!",
+//                     timestamp: "2024-03-20T10:00:00Z"
+//                 }
+//                 // ... more comments
+//             ]
+//         }
+//         // ... more posts
+//     ]
+// }
+
 // Test connections on startup
 async function testConnections() {
 	try {
 		await connectToMongo();
 		const session = driver.session();
+		
 		await session.run("RETURN 1");
 		console.log("Neo4j connected successfully");
 		session.close();
