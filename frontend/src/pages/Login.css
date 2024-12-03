@@ -1,0 +1,102 @@
+/* src/pages/Login.css */
+@import url('https://fonts.googleapis.com/css2?family=Poppins:wght@400;600&family=Roboto:wght@400;500&display=swap');
+/* Importing Google Fonts */
+
+.login-container {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    height: 100vh;
+    background: linear-gradient(135deg, #dbeafe, #fce7f3);
+    /* Soft blue and pink gradient */
+    font-family: 'Poppins', sans-serif;
+    /* Use "Poppins" for modern and clean look */
+    color: #333;
+    /* Neutral text color */
+}
+
+h1 {
+    font-size: 3rem;
+    margin-bottom: 30px;
+    background: linear-gradient(45deg, #3b82f6, #ec4899);
+    /* Blue and pink gradient */
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    /* Gradient text effect */
+    letter-spacing: 1.5px;
+    /* Slight spacing for readability */
+    text-align: center;
+    font-family: 'Roboto', sans-serif;
+    /* Use "Roboto" for balanced headers */
+    font-weight: 600;
+    /* Semi-bold font weight */
+}
+
+.login-input {
+    padding: 14px;
+    font-size: 1rem;
+    margin-bottom: 20px;
+    width: 280px;
+    border: 1px solid #c7d2fe;
+    /* Light blue border */
+    border-radius: 12px;
+    /* Slightly rounded corners */
+    background-color: #ffffff;
+    /* White background */
+    color: #374151;
+    /* Neutral dark gray text */
+    font-family: 'Poppins', sans-serif;
+    /* Consistent with the container */
+    box-shadow: none;
+    /* Flat modern look */
+}
+
+.login-input:focus {
+    outline: none;
+    border-color: #3b82f6;
+    /* Bright blue focus color */
+    box-shadow: 0px 0px 5px rgba(59, 130, 246, 0.5);
+    /* Soft blue glow */
+}
+
+.login-input::placeholder {
+    color: #9ca3af;
+    /* Soft gray placeholder */
+    font-style: italic;
+    /* Optional: italicize placeholder */
+    font-family: 'Poppins', sans-serif;
+    /* Match input font */
+}
+
+.login-button {
+    padding: 14px 25px;
+    font-size: 1rem;
+    font-weight: bold;
+    background: linear-gradient(45deg, #3b82f6, #ec4899);
+    /* Blue and pink gradient */
+    color: #ffffff;
+    /* White text */
+    border: none;
+    border-radius: 25px;
+    /* Fully rounded button */
+    cursor: pointer;
+    transition: background-color 0.3s ease, transform 0.2s ease;
+    box-shadow: 0px 3px 5px rgba(0, 0, 0, 0.2);
+    /* Subtle shadow */
+    font-family: 'Roboto', sans-serif;
+    /* Slightly different font for buttons */
+}
+
+.login-button:hover {
+    transform: scale(1.05);
+    /* Slight hover effect */
+    box-shadow: 0px 4px 6px rgba(0, 0, 0, 0.3);
+    /* Enhanced shadow */
+}
+
+.login-button:active {
+    transform: scale(1.02);
+    box-shadow: 0px 2px 4px rgba(0, 0, 0, 0.1);
+    /* Reduced shadow on click */
+}

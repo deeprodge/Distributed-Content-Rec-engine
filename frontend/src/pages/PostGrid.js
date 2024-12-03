@@ -1,9 +1,10 @@
 // src/pages/PostGrid.js
 import React, { useState, useEffect } from "react";
-import Post from "../components/Post"; // Import the Post component
-import "./PostGrid.css"; // Add styles for grid layout
+import Post from "../components/Post";
+import "./PostGrid.css";
+import { getCurrentUserId } from "../GlobalState";
 
-const PostGrid = () => {
+const PostGrid = ({ onLogout }) => {
 	const [posts, setPosts] = useState([]);
 	const [loading, setLoading] = useState(true);
 	const [error, setError] = useState(null);
@@ -107,23 +108,9 @@ const PostGrid = () => {
 
 	return (
 		<div className="page-container">
-			{/* User Selector */}
-			<div className="user-selector">
-				<label htmlFor="user-select">Viewing as: </label>
-				<select 
-					id="user-select"
-					value={currentUser}
-					onChange={(e) => setCurrentUser(e.target.value)}
-				>
-					{users.map(user => (
-						<option key={user._id} value={user._id}>
-							{user.name}
-						</option>
-					))}
-				</select>
-			</div>
-
-			{/* Posts Grid */}
+			<button className="logout-button" onClick={onLogout}>
+				Logout
+			</button>
 			<div className="post-grid">
 				{posts.map((post, index) => (
 					<Post

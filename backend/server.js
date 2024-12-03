@@ -119,7 +119,7 @@ app.post("/api/recommendations", async (req, res) => {
 		// `, { userId });
 
 		const neoResult = await session.run(
-                    `
+			`
             MATCH (u:User {id: $userId})-[r1:INTERACTED]->(c1:Content)
             MATCH (c1)<-[r2:INTERACTED]-(other:User)
             MATCH (other)-[r3:INTERACTED]->(c2:Content)
@@ -174,7 +174,7 @@ app.post("/api/recommendations", async (req, res) => {
 			acc[user._id] = user.name;
 			return acc;
 		}, {});
-
+		console.log("User names:", userNameMap);
 		// Fetch images
 		const images = await db
 			.collection("images")

@@ -4,7 +4,7 @@
     padding: 20px;
     background-color: #fafafa;
 }
-
+/* 
 .user-selector {
     margin-bottom: 20px;
     padding: 16px;
@@ -29,7 +29,7 @@
     color: #262626;
     background-color: white;
     cursor: pointer;
-}
+} */
 
 .post-grid {
     display: grid;
@@ -66,4 +66,19 @@
     min-height: 400px;
     color: #8e8e8e;
     font-size: 14px;
+}
+
+.logout-button {
+    padding: 10px 20px;
+    font-size: 1rem;
+    background-color: #ff4d4d;
+    color: #fff;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    margin-bottom: 10px;
+}
+
+.logout-button:hover {
+    background-color: #cc0000;
 }
