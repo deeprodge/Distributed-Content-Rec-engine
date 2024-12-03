@@ -408,10 +408,6 @@ app.post('/api/myprofile', async (req, res) => {
 
 		const contentIds = userPosts.map(post => post._id);
 
-		// Get user details
-		const user = await db.collection('users')
-			.findOne({ _id: userId });
-
 		// Fetch images for the posts
 		const images = await db.collection('images')
 			.find({ _id: { $in: contentIds } })
@@ -441,7 +437,7 @@ app.post('/api/myprofile', async (req, res) => {
 				}
 			]).toArray();
 
-		// Get comments
+		// Get comments for these posts
 		const comments = await db.collection('interactions')
 			.find({
 				content_id: { $in: contentIds },
@@ -487,8 +483,8 @@ app.post('/api/myprofile', async (req, res) => {
 
 		const userLikedContentIds = new Set(userLikes.map(like => like.content_id));
 
-		// Combine all data
-		const enrichedPosts = userPosts.map(post => {
+		// Combine all data into the same format as /api/recommendations
+		const enrichedContent = userPosts.map(post => {
 			const contentId = post._id;
 			const interactionData = interactions.find(i => i._id === contentId) || {
 				likes: 0,
@@ -498,7 +494,7 @@ app.post('/api/myprofile', async (req, res) => {
 
 			return {
 				...post,
-				username: user.name, // Add user's name
+				username: userId, // Use the userId as the poster's name
 				image: images.find(img => img._id === contentId)?.image || null,
 				interactions: {
 					...interactionData,
@@ -508,21 +504,8 @@ app.post('/api/myprofile', async (req, res) => {
 			};
 		});
 
-		// Add user profile information
-		const profileData = {
-			user: {
-				_id: user._id,
-				name: user.name,
-				email: user.email,
-				location: user.location,
-				postsCount: userPosts.length,
-				// You can add more profile stats here
-			},
-			posts: enrichedPosts
-		};
-
 		console.log(`Successfully fetched profile data for user ${userId}`);
-		res.json(profileData);
+		res.json(enrichedContent); // Return the enriched content in the same format as recommendations
 
 	} catch (error) {
 		console.error('Error in /api/myprofile:', error);
@@ -532,40 +515,6 @@ app.post('/api/myprofile', async (req, res) => {
 		});
 	}
 });
-
-// The response of myprofile will look like:
-// {
-//     user: {
-//         _id: "user_001",
-//         name: "Aarav Mehta",
-//         email: "aarav.mehta@example.com",
-//         location: "San Francisco",
-//         postsCount: 5
-//     },
-//     posts: [
-//         {
-//             _id: "content_001",
-//             description: "Post description",
-//             username: "Aarav Mehta",
-//             image: "base64_image_data",
-//             interactions: {
-//                 likes: 10,
-//                 comments: 3,
-//                 shares: 1,
-//                 hasLiked: true
-//             },
-//             comments: [
-//                 {
-//                     username: "Zara Patel",
-//                     comment_text: "Great post!",
-//                     timestamp: "2024-03-20T10:00:00Z"
-//                 }
-//                 // ... more comments
-//             ]
-//         }
-//         // ... more posts
-//     ]
-// }
 
 // Test connections on startup
 async function testConnections() {
